@@ -28,6 +28,11 @@
                 <label for="phone-number" class="form-label">Phone number</label>
                 <ValidationMessage For="() => Input.PhoneNumber" class="text-danger" />
             </div>
+            <div class="form-floating mb-3">
+                <InputDate @bind-Value="Input.Dob" class="form-control" placeholder="Please enter your date of birth." />
+                <label for="dob" class="form-label">Date of birth</label>
+                <ValidationMessage For="() => Input.Dob" class="text-danger" />
+            </div>
             <button type="submit" class="w-100 btn btn-lg btn-primary">Save</button>
         </EditForm>
     </div>
@@ -51,17 +56,19 @@
         phoneNumber = await UserManager.GetPhoneNumberAsync(user);
 
         Input.PhoneNumber ??= phoneNumber;
+        Input.Dob ??= user.Dob;
     }
 
     private async Task OnValidSubmitAsync()
     {
-        if (Input.PhoneNumber != phoneNumber)
+        user.PhoneNumber = Input.PhoneNumber;
+        user.Dob = Input.Dob;
+        var updateResult = await UserManager.UpdateAsync(user);
+
+        if (!updateResult.Succeeded)
         {
-            var setPhoneResult = await UserManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
-            if (!setPhoneResult.Succeeded)
-            {
-                RedirectManager.RedirectToCurrentPageWithStatus("Error: Failed to set phone number.", HttpContext);
-            }
+            RedirectManager.RedirectToCurrentPageWithStatus("Error: Failed to update profile.", HttpContext);
+            return;
         }
 
         await SignInManager.RefreshSignInAsync(user);
@@ -73,5 +80,8 @@
         [Phone]
         [Display(Name = "Phone number")]
         public string? PhoneNumber { get; set; }
+
+        [Display(Name = "Date of birth")]
+        public DateOnly? Dob { get; set; }
     }
 }
